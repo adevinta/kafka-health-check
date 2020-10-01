@@ -43,8 +43,16 @@ func (connection *kafkaBrokerConnection) Consumer(conf kafka.ConsumerConf) (kafk
 }
 
 func (connection *kafkaBrokerConnection) CreateTopic(topics []proto.TopicInfo, timeout time.Duration, validateOnly bool) error {
-	_, err := connection.broker.CreateTopic(topics, timeout, validateOnly)
-	return err
+	resp, err := connection.broker.CreateTopic(topics, timeout, validateOnly)
+	if err != nil {
+		return err
+	}
+
+	if len(resp.TopicErrors) > 0 {
+		return resp.TopicErrors[0].Err
+	}
+
+	return nil
 }
 
 func (connection *kafkaBrokerConnection) Producer(conf kafka.ProducerConf) kafka.Producer {

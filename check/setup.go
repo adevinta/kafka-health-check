@@ -196,8 +196,9 @@ func (check *HealthCheck) createTopic(name string, forHealthCheck bool) (err err
 		acceptableDelayTime := 3 * time.Second
 
 		healthCheckTopic := proto.TopicInfo{
-			Topic:         name,
-			NumPartitions: 1,
+			Topic:             name,
+			NumPartitions:     -1,
+			ReplicationFactor: -1,
 			ConfigEntries: []proto.ConfigEntry{
 				proto.ConfigEntry{
 					ConfigName:  "delete.retention.ms",
