@@ -8,8 +8,8 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	kafka "github.com/optiopay/kafka"
-	proto "github.com/optiopay/kafka/proto"
+	kafka "github.com/optiopay/kafka/v2"
+	proto "github.com/optiopay/kafka/v2/proto"
 	zk "github.com/samuel/go-zookeeper/zk"
 )
 
@@ -48,6 +48,20 @@ func (m *MockBrokerConnection) Dial(nodeAddresses []string, conf kafka.BrokerCon
 func (mr *MockBrokerConnectionMockRecorder) Dial(nodeAddresses, conf interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Dial", reflect.TypeOf((*MockBrokerConnection)(nil).Dial), nodeAddresses, conf)
+}
+
+// CreateTopic mocks base method
+func (m *MockBrokerConnection) CreateTopic(topics []proto.TopicInfo, timeout time.Duration, validateOnly bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateTopic")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateTopic indicates an expected call of CreateTopic
+func (mr *MockBrokerConnectionMockRecorder) CreateTopic(topics, timeout, validateOnly interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTopic", reflect.TypeOf((*MockBrokerConnection)(nil).CreateTopic), topics, timeout, validateOnly)
 }
 
 // Consumer mocks base method

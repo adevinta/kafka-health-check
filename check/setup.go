@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/optiopay/kafka/proto"
+	"github.com/optiopay/kafka/v2/proto"
 	"github.com/pkg/errors"
 	"github.com/samuel/go-zookeeper/zk"
 	log "github.com/sirupsen/logrus"
@@ -190,21 +190,50 @@ func (check *HealthCheck) createTopic(name string, forHealthCheck bool) (err err
 	brokerID := int32(check.config.brokerID)
 
 	if !exists {
-		topicConfig := `{"version":1,"config":{"delete.retention.ms":"10000",` +
-			`"cleanup.policy":"delete","compression.type":"uncompressed",` +
-			`"min.insync.replicas":"1"}}`
 		log.Infof(`creating topic "%s" configuration node`, name)
 
-		if err = createZkNode(zkConn, topicPath, topicConfig, forHealthCheck); err != nil {
-			return
+		acceptableDelayTime := 3 * time.Second
+
+		healthCheckTopic := proto.TopicInfo{
+			Topic:         name,
+			NumPartitions: 1,
+			ConfigEntries: []proto.ConfigEntry{
+				proto.ConfigEntry{
+					ConfigName:  "delete.retention.ms",
+					ConfigValue: "10000",
+				}, proto.ConfigEntry{
+					ConfigName:  "cleanup.policy",
+					ConfigValue: "delete",
+				}, proto.ConfigEntry{
+					ConfigName:  "compression.type",
+					ConfigValue: "uncompressed",
+				}, proto.ConfigEntry{
+					ConfigName:  "min.insync.replicas",
+					ConfigValue: "1",
+				},
+			},
+			ReplicaAssignments: []proto.ReplicaAssignment{
+				proto.ReplicaAssignment{
+					Partition: 0,
+					Replicas:  []int32{brokerID},
+				},
+			},
+		}
+		err := check.broker.CreateTopic([]proto.TopicInfo{healthCheckTopic}, acceptableDelayTime, true)
+		if err != nil {
+			return err
 		}
 
-		partitionAssignment := fmt.Sprintf(`{"version":1,"partitions":{"0":[%d]}}`, brokerID)
-		log.Infof(`creating topic "%s" partition assignment node`, name)
+		// if err = createZkNode(zkConn, topicPath, topicConfig, forHealthCheck); err != nil {
+		// 	return
+		// }
 
-		if err = createZkNode(zkConn, chroot+"/brokers/topics/"+name, partitionAssignment, forHealthCheck); err != nil {
-			return
-		}
+		// partitionAssignment := fmt.Sprintf(`{"version":1,"partitions":{"0":[%d]}}`, brokerID)
+		// log.Infof(`creating topic "%s" partition assignment node`, name)
+
+		// if err = createZkNode(zkConn, chroot+"/brokers/topics/"+name, partitionAssignment, forHealthCheck); err != nil {
+		// 	return err
+		// }
 	}
 
 	if !forHealthCheck {

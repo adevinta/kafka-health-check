@@ -3,7 +3,7 @@ package check
 import (
 	"fmt"
 
-	"github.com/optiopay/kafka/proto"
+	"github.com/optiopay/kafka/v2/proto"
 )
 
 // periodically checks health of the Kafka cluster

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/optiopay/kafka"
-	"github.com/optiopay/kafka/proto"
+	"github.com/optiopay/kafka/v2"
+	"github.com/optiopay/kafka/v2/proto"
 	"github.com/samuel/go-zookeeper/zk"
 )
 
@@ -18,6 +18,8 @@ type BrokerConnection interface {
 	Producer(conf kafka.ProducerConf) kafka.Producer
 
 	Metadata() (*proto.MetadataResp, error)
+
+	CreateTopic([]proto.TopicInfo, time.Duration, bool) error
 
 	Close()
 }
@@ -38,6 +40,11 @@ func (connection *kafkaBrokerConnection) Dial(nodeAddresses []string, conf kafka
 
 func (connection *kafkaBrokerConnection) Consumer(conf kafka.ConsumerConf) (kafka.Consumer, error) {
 	return connection.broker.Consumer(conf)
+}
+
+func (connection *kafkaBrokerConnection) CreateTopic(topics []proto.TopicInfo, timeout time.Duration, validateOnly bool) error {
+	_, err := connection.broker.CreateTopic(topics, timeout, validateOnly)
+	return err
 }
 
 func (connection *kafkaBrokerConnection) Producer(conf kafka.ProducerConf) kafka.Producer {

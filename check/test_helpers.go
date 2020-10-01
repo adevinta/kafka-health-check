@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/optiopay/kafka"
-	"github.com/optiopay/kafka/kafkatest"
-	"github.com/optiopay/kafka/proto"
+	"github.com/optiopay/kafka/v2"
+	"github.com/optiopay/kafka/v2/kafkatest"
+	"github.com/optiopay/kafka/v2/proto"
 )
 
 func newTestCheck() *HealthCheck {
