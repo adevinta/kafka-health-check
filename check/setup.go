@@ -175,7 +175,6 @@ func (check *HealthCheck) createTopic(name string, forHealthCheck bool) (err err
 		return err
 	}
 	log.Infof("lock acquired for creating topic %s", name)
-	defer zkConn.Unlock(lockPath)
 
 	topicPath := chroot + "/config/topics/" + name
 
@@ -186,6 +185,8 @@ func (check *HealthCheck) createTopic(name string, forHealthCheck bool) (err err
 			return
 		}
 	}
+
+	zkConn.Unlock(lockPath)
 
 	brokerID := int32(check.config.brokerID)
 
