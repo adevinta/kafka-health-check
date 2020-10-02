@@ -2,9 +2,9 @@ package check
 
 import (
 	"errors"
-	"fmt"
+	// "fmt"
 	"github.com/golang/mock/gomock"
-	"sync"
+	// "sync"
 	"testing"
 )
 
@@ -161,30 +161,30 @@ func Test_findPartitionID_WhenTopicDoesNotExistAndCreatingItFails_ReturnsError(t
 	}
 }
 
-func Test_createHealthCheckTopic_WhenTopicCreationsSuccessful_ReturnsNoError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+// func Test_createHealthCheckTopic_WhenTopicCreationsSuccessful_ReturnsNoError(t *testing.T) {
+// 	ctrl := gomock.NewController(t)
+// 	defer ctrl.Finish()
 
-	check, zookeeper := newZkTestCheck(ctrl)
+// 	check, zookeeper := newZkTestCheck(ctrl)
 
-	connection, _, _, _ := mockBroker(check, ctrl)
+// 	connection, _, _, _ := mockBroker(check, ctrl)
 
-	zookeeper.EXPECT().Connect([]string{"localhost:2181"}, gomock.Any()).Return(nil, nil)
-	connection.EXPECT().Dial(gomock.Any(), gomock.Any()).Return(nil)
-	connection.EXPECT().Metadata().Return(metadataWithoutTopic(), nil)
-	zookeeper.EXPECT().Lock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
-	zookeeper.EXPECT().Unlock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
-	connection.EXPECT().CreateTopic(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-	zookeeper.EXPECT().Close()
+// 	zookeeper.EXPECT().Connect([]string{"localhost:2181"}, gomock.Any()).Return(nil, nil)
+// 	connection.EXPECT().Dial(gomock.Any(), gomock.Any()).Return(nil)
+// 	connection.EXPECT().Metadata().Return(metadataWithoutTopic(), nil)
+// 	zookeeper.EXPECT().Lock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
+// 	zookeeper.EXPECT().Unlock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
+// 	connection.EXPECT().CreateTopic(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+// 	zookeeper.EXPECT().Close()
 
-	stopChan := make(chan struct{})
-	wg := &sync.WaitGroup{}
+// 	stopChan := make(chan struct{})
+// 	wg := &sync.WaitGroup{}
 
-	err := check.connect(true, stopChan, wg)
-	if err != nil {
-		t.Error(err)
-	}
-}
+// 	err := check.connect(true, stopChan, wg)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
 
 func Test_zookeeperEnsembleAndChroot_WhenWithChroot_ReturnsEnsembleAndChroot(t *testing.T) {
 	ensemble, chroot := zookeeperEnsembleAndChroot("localhost:2181,localhost:2182/env/one")
