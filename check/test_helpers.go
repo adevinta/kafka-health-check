@@ -5,10 +5,10 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/Domoryonok/kafka/v2"
+	"github.com/Domoryonok/kafka/v2/kafkatest"
+	"github.com/Domoryonok/kafka/v2/proto"
 	"github.com/golang/mock/gomock"
-	"github.com/optiopay/kafka/v2"
-	"github.com/optiopay/kafka/v2/kafkatest"
-	"github.com/optiopay/kafka/v2/proto"
 )
 
 func newTestCheck() *HealthCheck {

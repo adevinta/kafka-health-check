@@ -7,9 +7,9 @@ import (
 	reflect "reflect"
 	time "time"
 
+	kafka "github.com/Domoryonok/kafka/v2"
+	proto "github.com/Domoryonok/kafka/v2/proto"
 	gomock "github.com/golang/mock/gomock"
-	kafka "github.com/optiopay/kafka/v2"
-	proto "github.com/optiopay/kafka/v2/proto"
 	zk "github.com/samuel/go-zookeeper/zk"
 )
 
@@ -62,6 +62,20 @@ func (m *MockBrokerConnection) CreateTopic(topics []proto.TopicInfo, timeout tim
 func (mr *MockBrokerConnectionMockRecorder) CreateTopic(topics, timeout, validateOnly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTopic", reflect.TypeOf((*MockBrokerConnection)(nil).CreateTopic), topics, timeout, validateOnly)
+}
+
+// DeleteTopic mocks base method
+func (m *MockBrokerConnection) DeleteTopic(topics []string, timeout time.Duration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteTopic")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteTopic indicates an expected call of DeleteTopic
+func (mr *MockBrokerConnectionMockRecorder) DeleteTopic(topics, timeout interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTopic", reflect.TypeOf((*MockBrokerConnection)(nil).CreateTopic), topics, timeout)
 }
 
 // Consumer mocks base method

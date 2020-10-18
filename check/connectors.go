@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/optiopay/kafka/v2"
-	"github.com/optiopay/kafka/v2/proto"
+	"github.com/Domoryonok/kafka/v2"
+	"github.com/Domoryonok/kafka/v2/proto"
 	"github.com/samuel/go-zookeeper/zk"
 )
 
@@ -20,6 +20,8 @@ type BrokerConnection interface {
 	Metadata() (*proto.MetadataResp, error)
 
 	CreateTopic([]proto.TopicInfo, time.Duration, bool) error
+
+	DeleteTopic([]string, time.Duration) error
 
 	Close()
 }
@@ -49,7 +51,24 @@ func (connection *kafkaBrokerConnection) CreateTopic(topics []proto.TopicInfo, t
 	}
 
 	if len(resp.TopicErrors) > 0 {
-		return resp.TopicErrors[0].Err
+		if resp.TopicErrors[0].ErrorCode != 0 {
+			return resp.TopicErrors[0].Err
+		}
+	}
+
+	return nil
+}
+
+func (connection *kafkaBrokerConnection) DeleteTopic(topics []string, timeout time.Duration) error {
+	resp, err := connection.broker.DeleteTopic(topics, timeout)
+	if err != nil {
+		return err
+	}
+
+	if len(resp.TopicErrors) > 0 {
+		if resp.TopicErrors[0].ErrorCode != 0 {
+			return fmt.Errorf("Deletion failed for Topic: %s with ErrorCode: %d", resp.TopicErrors[0].Topic, resp.TopicErrors[0].ErrorCode)
+		}
 	}
 
 	return nil

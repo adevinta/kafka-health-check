@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/optiopay/kafka/v2/proto"
+	"github.com/Domoryonok/kafka/v2/proto"
 	"github.com/pkg/errors"
 	"github.com/samuel/go-zookeeper/zk"
 	log "github.com/sirupsen/logrus"
@@ -193,7 +193,7 @@ func (check *HealthCheck) createTopic(name string, forHealthCheck bool) (err err
 	if !exists {
 		log.Infof(`creating topic "%s" configuration node`, name)
 
-		acceptableDelayTime := 3 * time.Second
+		acceptableTimeout := 3 * time.Second
 
 		healthCheckTopic := proto.TopicInfo{
 			Topic:             name,
@@ -221,21 +221,10 @@ func (check *HealthCheck) createTopic(name string, forHealthCheck bool) (err err
 				},
 			},
 		}
-		err := check.broker.CreateTopic([]proto.TopicInfo{healthCheckTopic}, acceptableDelayTime, true)
+		err := check.broker.CreateTopic([]proto.TopicInfo{healthCheckTopic}, acceptableTimeout, true)
 		if err != nil {
 			return err
 		}
-
-		// if err = createZkNode(zkConn, topicPath, topicConfig, forHealthCheck); err != nil {
-		// 	return
-		// }
-
-		// partitionAssignment := fmt.Sprintf(`{"version":1,"partitions":{"0":[%d]}}`, brokerID)
-		// log.Infof(`creating topic "%s" partition assignment node`, name)
-
-		// if err = createZkNode(zkConn, chroot+"/brokers/topics/"+name, partitionAssignment, forHealthCheck); err != nil {
-		// 	return err
-		// }
 	}
 
 	if !forHealthCheck {
@@ -345,10 +334,10 @@ func (check *HealthCheck) closeConnection(deleteTopicIfPresent bool) error {
 			return fmt.Errorf("error while taking cluster lock: %w", err)
 		}
 		log.Info("lock acquired to close the connection")
-		if err = check.deleteTopic(zkConn, chroot, check.config.topicName, check.partitionID); err != nil {
+		if err = check.deleteTopic(check.config.topicName); err != nil {
 			log.Errorf("error while deleting topic %s: %s", check.config.topicName, err)
 		}
-		if err = check.deleteTopic(zkConn, chroot, check.config.replicationTopicName, check.replicationPartitionID); err != nil {
+		if err = check.deleteTopic(check.config.replicationTopicName); err != nil {
 			log.Errorf("error while deleting topic %s: %s", check.config.replicationTopicName, err)
 		}
 		err = zkConn.Unlock(lockPath)
@@ -359,35 +348,13 @@ func (check *HealthCheck) closeConnection(deleteTopicIfPresent bool) error {
 	return nil
 }
 
-func (check *HealthCheck) deleteTopic(zkConn ZkConnection, chroot, name string, partitionID int32) error {
-	log.Infof("removing from topic %s", name)
-	topic := ZkTopic{Name: name}
-	err := zkPartitions(&topic, zkConn, name, chroot)
+func (check *HealthCheck) deleteTopic(name string) error {
+	acceptableTimeout := 3 * time.Second
+	err := check.broker.DeleteTopic([]string{name}, acceptableTimeout)
 	if err != nil {
 		return err
 	}
-
-	replicas, ok := topic.Partitions[partitionID]
-	if !ok {
-		return fmt.Errorf(`Cannot find partition with ID %d in topic "%s"`, partitionID, name)
-	}
-
-	brokerID := int32(check.config.brokerID)
-	if len(replicas) > 1 {
-		log.Info("Shrinking replication check topic to exclude broker ", brokerID)
-		replicas = delAll(replicas, brokerID)
-		return reassignPartition(zkConn, partitionID, replicas, name, chroot)
-	}
-
-	log.Infof("topic %s has only one replica, deleting it", name)
-
-	delTopicPath := chroot + "/admin/delete_topics/" + name
-
-	err = createZkNode(check.zookeeper, delTopicPath, "", true)
-	if err != nil {
-		return err
-	}
-	return check.waitForTopicDeletion(delTopicPath)
+	return nil
 }
 
 func (check *HealthCheck) waitForTopicDeletion(topicPath string) error {
