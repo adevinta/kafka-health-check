@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Domoryonok/kafka/v2"
+	"github.com/Adevinta/kafka/v2"
 	log "github.com/sirupsen/logrus"
 )
 

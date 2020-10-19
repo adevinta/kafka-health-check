@@ -7,8 +7,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	kafka "github.com/Domoryonok/kafka/v2"
-	proto "github.com/Domoryonok/kafka/v2/proto"
+	kafka "github.com/Adevinta/kafka/v2"
+	proto "github.com/Adevinta/kafka/v2/proto"
 	gomock "github.com/golang/mock/gomock"
 	zk "github.com/samuel/go-zookeeper/zk"
 )
@@ -53,7 +53,7 @@ func (mr *MockBrokerConnectionMockRecorder) Dial(nodeAddresses, conf interface{}
 // CreateTopic mocks base method
 func (m *MockBrokerConnection) CreateTopic(topics []proto.TopicInfo, timeout time.Duration, validateOnly bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateTopic")
+	ret := m.ctrl.Call(m, "CreateTopic", topics, timeout, validateOnly)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -67,7 +67,7 @@ func (mr *MockBrokerConnectionMockRecorder) CreateTopic(topics, timeout, validat
 // DeleteTopic mocks base method
 func (m *MockBrokerConnection) DeleteTopic(topics []string, timeout time.Duration) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteTopic")
+	ret := m.ctrl.Call(m, "DeleteTopic", topics, timeout)
 	ret0, _ := ret[0].(error)
 	return ret0
 }

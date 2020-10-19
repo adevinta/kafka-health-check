@@ -3,7 +3,7 @@ package check
 import (
 	"fmt"
 
-	"github.com/Domoryonok/kafka/v2/proto"
+	"github.com/Adevinta/kafka/v2/proto"
 )
 
 // periodically checks health of the Kafka cluster
