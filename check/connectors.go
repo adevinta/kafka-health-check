@@ -19,9 +19,9 @@ type BrokerConnection interface {
 
 	Metadata() (*proto.MetadataResp, error)
 
-	CreateTopic([]proto.TopicInfo, time.Duration, bool) error
+	CreateTopic(proto.TopicInfo, time.Duration) error
 
-	DeleteTopic([]string, time.Duration) error
+	DeleteTopic(string, time.Duration) error
 
 	Close()
 }
@@ -44,8 +44,8 @@ func (connection *kafkaBrokerConnection) Consumer(conf kafka.ConsumerConf) (kafk
 	return connection.broker.Consumer(conf)
 }
 
-func (connection *kafkaBrokerConnection) CreateTopic(topics []proto.TopicInfo, timeout time.Duration, validateOnly bool) error {
-	resp, err := connection.broker.CreateTopic(topics, timeout, validateOnly)
+func (connection *kafkaBrokerConnection) CreateTopic(topic proto.TopicInfo, timeout time.Duration) error {
+	resp, err := connection.broker.CreateTopic([]proto.TopicInfo{topic}, timeout, false)
 	if err != nil {
 		return err
 	}
@@ -59,8 +59,8 @@ func (connection *kafkaBrokerConnection) CreateTopic(topics []proto.TopicInfo, t
 	return nil
 }
 
-func (connection *kafkaBrokerConnection) DeleteTopic(topics []string, timeout time.Duration) error {
-	resp, err := connection.broker.DeleteTopic(topics, timeout)
+func (connection *kafkaBrokerConnection) DeleteTopic(topic string, timeout time.Duration) error {
+	resp, err := connection.broker.DeleteTopic([]string{topic}, timeout)
 	if err != nil {
 		return err
 	}

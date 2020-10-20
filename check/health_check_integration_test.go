@@ -16,13 +16,11 @@ func TestCloseConnectionIsClosing(t *testing.T) {
 	ck.broker = brk
 
 	zk.EXPECT().Connect(gomock.Any(), gomock.Any())
+	zk.EXPECT().Get("/brokers/topics/health-check")
+	zk.EXPECT().Get("/brokers/topics/replication-check")
 	zk.EXPECT().Close()
-	brk.EXPECT().DeleteTopic(gomock.Any(), gomock.Any())
-
 	zk.EXPECT().Lock(gomock.Any())
 	zk.EXPECT().Unlock(gomock.Any())
-	brk.EXPECT().DeleteTopic(gomock.Any(), gomock.Any())
-
 	brk.EXPECT().Close()
 
 	_ = ck.closeConnection(true)

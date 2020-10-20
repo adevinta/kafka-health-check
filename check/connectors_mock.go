@@ -52,33 +52,32 @@ func (mr *MockBrokerConnectionMockRecorder) Dial(nodeAddresses, conf interface{}
 }
 
 // CreateTopic mocks base method
-func (m *MockBrokerConnection) CreateTopic(topics []proto.TopicInfo, timeout time.Duration, validateOnly bool) error {
+func (m *MockBrokerConnection) CreateTopic(topic proto.TopicInfo, timeout time.Duration) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateTopic", topics, timeout, validateOnly)
+	ret := m.ctrl.Call(m, "CreateTopic", topic, timeout)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateTopic indicates an expected call of CreateTopic
-func (mr *MockBrokerConnectionMockRecorder) CreateTopic(topics, timeout, validateOnly interface{}) *gomock.Call {
+func (mr *MockBrokerConnectionMockRecorder) CreateTopic(topic, timeout interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTopic", reflect.TypeOf((*MockBrokerConnection)(nil).CreateTopic), topics, timeout, validateOnly)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTopic", reflect.TypeOf((*MockBrokerConnection)(nil).CreateTopic), topic, timeout)
 }
 
 // DeleteTopic mocks base method
-func (m *MockBrokerConnection) DeleteTopic(topics []string, timeout time.Duration) error {
+func (m *MockBrokerConnection) DeleteTopic(topic string, timeout time.Duration) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteTopic", topics, timeout)
+	ret := m.ctrl.Call(m, "DeleteTopic", topic, timeout)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteTopic indicates an expected call of DeleteTopic
-func (mr *MockBrokerConnectionMockRecorder) DeleteTopic(topics, timeout interface{}) *gomock.Call {
+func (mr *MockBrokerConnectionMockRecorder) DeleteTopic(topic, timeout interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTopic", reflect.TypeOf((*MockBrokerConnection)(nil).CreateTopic), topics, timeout)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTopic", reflect.TypeOf((*MockBrokerConnection)(nil).CreateTopic), topic, timeout)
 }
-
 
 // Consumer mocks base method
 func (m *MockBrokerConnection) Consumer(conf kafka.ConsumerConf) (kafka.Consumer, error) {

@@ -222,7 +222,7 @@ func (check *HealthCheck) createTopic(name string, forHealthCheck bool) (err err
 				},
 			},
 		}
-		err := check.broker.CreateTopic([]proto.TopicInfo{healthCheckTopic}, acceptableTimeout, true)
+		err := check.broker.CreateTopic(healthCheckTopic, acceptableTimeout)
 		if err != nil {
 			return err
 		}
@@ -337,11 +337,10 @@ func (check *HealthCheck) closeConnection(deleteTopicIfPresent bool) error {
 		}
 		log.Info("lock acquired to close the connection")
 
-    if err = check.deleteTopic(check.config.topicName); err != nil {
+		if err = check.deleteTopic(zkConn, chroot, check.config.topicName, check.partitionID); err != nil {
 			log.Errorf("error while deleting topic %s: %s", check.config.topicName, err)
 		}
-		if err = check.deleteTopic(check.config.replicationTopicName); err != nil {
-
+		if err = check.deleteTopic(zkConn, chroot, check.config.replicationTopicName, check.replicationPartitionID); err != nil {
 			log.Errorf("error while deleting topic %s: %s", check.config.replicationTopicName, err)
 		}
 		err = zkConn.Unlock(lockPath)
@@ -352,25 +351,30 @@ func (check *HealthCheck) closeConnection(deleteTopicIfPresent bool) error {
 	return nil
 }
 
-func (check *HealthCheck) deleteTopic(name string) error {
+func (check *HealthCheck) deleteTopic(zkConn ZkConnection, chroot, name string, partitionID int32) error {
+	topic := ZkTopic{Name: name}
+	err := zkPartitions(&topic, zkConn, name, chroot)
+	if err != nil {
+		return err
+	}
+
+	replicas, ok := topic.Partitions[partitionID]
+	if !ok {
+		return fmt.Errorf(`Cannot find partition with ID %d in topic "%s"`, partitionID, name)
+	}
+
+	brokerID := int32(check.config.brokerID)
+	if len(replicas) > 1 {
+		log.Info("Shrinking replication check topic to exclude broker ", brokerID)
+		replicas = delAll(replicas, brokerID)
+		return reassignPartition(zkConn, partitionID, replicas, name, chroot)
+	}
+
 	acceptableTimeout := 3 * time.Second
-	err := check.broker.DeleteTopic([]string{name}, acceptableTimeout)
+
+	err = check.broker.DeleteTopic(name, acceptableTimeout)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func (check *HealthCheck) waitForTopicDeletion(topicPath string) error {
-	for {
-		log.Infof("checking zookeeper for deletion of node \"%s\"", topicPath)
-		exists, _, err := check.zookeeper.Exists(topicPath)
-		if err != nil {
-			return err
-		}
-		if !exists {
-			return nil
-		}
-		time.Sleep(check.config.retryInterval)
-	}
 }

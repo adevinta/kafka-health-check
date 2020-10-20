@@ -135,7 +135,7 @@ func Test_findPartitionID_WhenTopicDoesNotExistAndMayCreateIt_CreatesTopic(t *te
 	zookeeper.EXPECT().Lock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
 	zookeeper.EXPECT().Unlock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
 
-	connection.EXPECT().CreateTopic(gomock.Any(), gomock.Any(), gomock.Any())
+	connection.EXPECT().CreateTopic(gomock.Any(), gomock.Any())
 	zookeeper.EXPECT().Close()
 
 	createIfMissing := true
@@ -177,7 +177,7 @@ func Test_createHealthCheckTopic_WhenTopicCreationsSuccessful_ReturnsNoError(t *
 	zookeeper.EXPECT().Lock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
 	zookeeper.EXPECT().Unlock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
 
-	connection.EXPECT().CreateTopic(gomock.Any(), gomock.Any(), gomock.Any())
+	connection.EXPECT().CreateTopic(gomock.Any(), gomock.Any())
 	zookeeper.EXPECT().Close()
 
 	err := check.createTopic("health-check", true)
@@ -234,7 +234,7 @@ func Test_createTopic_WhenCreatingTopicFails_ReturnsError(t *testing.T) {
 
 	zookeeper.EXPECT().Lock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
 	zookeeper.EXPECT().Unlock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
-	connection.EXPECT().CreateTopic(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("Topic Create error"))
+	connection.EXPECT().CreateTopic(gomock.Any(), gomock.Any()).Return(errors.New("Topic Create error"))
 
 	zookeeper.EXPECT().Close()
 
@@ -249,12 +249,13 @@ func Test_deleteHealthCheckTopic_WhenDeleteSucceeds_ReturnsNoError(t *testing.T)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	check, _ := newZkTestCheck(ctrl)
+	check, zookeeper := newZkTestCheck(ctrl)
 	connection, _, _, _ := mockBroker(check, ctrl)
 
-	connection.EXPECT().DeleteTopic([]string{"health-check"}, gomock.Any())
+	zookeeper.mockTopicGet("health-check")
+	connection.EXPECT().DeleteTopic("health-check", gomock.Any())
 
-	err := check.deleteTopic("health-check")
+	err := check.deleteTopic(zookeeper, "", "health-check", 0)
 
 	if err != nil {
 		t.Error("expected error to be nil, but was", err)
@@ -265,28 +266,14 @@ func Test_deleteTopic_WhenCreateDeleteNodeFails_ReturnsError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	check, _ := newZkTestCheck(ctrl)
+	check, zookeeper := newZkTestCheck(ctrl)
 	connection, _, _, _ := mockBroker(check, ctrl)
 
-	connection.EXPECT().DeleteTopic([]string{"health-check"}, gomock.Any()).Return(errors.New("New error"))
+	zookeeper.mockTopicGet("health-check")
 
-	err := check.deleteTopic("health-check")
+	connection.EXPECT().DeleteTopic("health-check", gomock.Any()).Return(errors.New("New error"))
 
-	if err == nil {
-		t.Error("expected error to be returned, but was nil")
-	}
-}
-
-func Test_deleteTopic_WhenExistsFails_ReturnsError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	check, _ := newZkTestCheck(ctrl)
-	connection, _, _, _ := mockBroker(check, ctrl)
-
-	connection.EXPECT().DeleteTopic([]string{"health-check"}, gomock.Any()).Return(errors.New("delete topic error"))
-
-	err := check.deleteTopic("health-check")
+	err := check.deleteTopic(zookeeper, "", "health-check", 0)
 
 	if err == nil {
 		t.Error("expected error to be returned, but was nil")
