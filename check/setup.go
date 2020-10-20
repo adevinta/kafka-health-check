@@ -170,6 +170,7 @@ func (check *HealthCheck) createTopic(name string, forHealthCheck bool) (err err
 	defer zkConn.Close()
 
 	lockPath := path.Join("/", chroot, "healthcheck", MainLockPath)
+
 	log.Infof("taking lock for creating topic %s", name)
 	if err := zkConn.Lock(lockPath); err != nil {
 		return err
@@ -306,6 +307,7 @@ func createZkNode(zookeeper ZkConnection, path string, content string, failIfExi
 	}
 
 	log.Infof("creating node %s", path)
+
 	flags := int32(0) // permanent node.
 	acl := zk.WorldACL(zk.PermAll)
 	_, err = zookeeper.Create(path, []byte(content), flags, acl)
@@ -334,10 +336,12 @@ func (check *HealthCheck) closeConnection(deleteTopicIfPresent bool) error {
 			return fmt.Errorf("error while taking cluster lock: %w", err)
 		}
 		log.Info("lock acquired to close the connection")
-		if err = check.deleteTopic(check.config.topicName); err != nil {
+
+    if err = check.deleteTopic(check.config.topicName); err != nil {
 			log.Errorf("error while deleting topic %s: %s", check.config.topicName, err)
 		}
 		if err = check.deleteTopic(check.config.replicationTopicName); err != nil {
+
 			log.Errorf("error while deleting topic %s: %s", check.config.replicationTopicName, err)
 		}
 		err = zkConn.Unlock(lockPath)

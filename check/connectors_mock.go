@@ -9,6 +9,7 @@ import (
 
 	kafka "github.com/Adevinta/kafka/v2"
 	proto "github.com/Adevinta/kafka/v2/proto"
+
 	gomock "github.com/golang/mock/gomock"
 	zk "github.com/samuel/go-zookeeper/zk"
 )
@@ -77,6 +78,7 @@ func (mr *MockBrokerConnectionMockRecorder) DeleteTopic(topics, timeout interfac
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTopic", reflect.TypeOf((*MockBrokerConnection)(nil).CreateTopic), topics, timeout)
 }
+
 
 // Consumer mocks base method
 func (m *MockBrokerConnection) Consumer(conf kafka.ConsumerConf) (kafka.Consumer, error) {
