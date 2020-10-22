@@ -370,6 +370,8 @@ func (check *HealthCheck) deleteTopic(zkConn ZkConnection, chroot, name string, 
 		return reassignPartition(zkConn, partitionID, replicas, name, chroot)
 	}
 
+	log.Infof("topic %s has only one replica, deleting it", name)
+
 	acceptableTimeout := 3 * time.Second
 
 	err = check.broker.DeleteTopic(name, acceptableTimeout)
