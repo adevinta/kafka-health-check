@@ -353,30 +353,44 @@ func (check *HealthCheck) closeConnection(deleteTopicIfPresent bool) error {
 
 func (check *HealthCheck) deleteTopic(zkConn ZkConnection, chroot, name string, partitionID int32) error {
 	topic := ZkTopic{Name: name}
-	err := zkPartitions(&topic, zkConn, name, chroot)
+	err := zkPartitions(&topic, zkConn, topic.Name, chroot)
 	if err != nil {
 		return err
 	}
 
 	replicas, ok := topic.Partitions[partitionID]
 	if !ok {
-		return fmt.Errorf(`Cannot find partition with ID %d in topic "%s"`, partitionID, name)
+		return fmt.Errorf(`Cannot find partition with ID %d in topic "%s"`, partitionID, topic.Name)
 	}
 
 	brokerID := int32(check.config.brokerID)
 	if len(replicas) > 1 {
 		log.Info("Shrinking replication check topic to exclude broker ", brokerID)
 		replicas = delAll(replicas, brokerID)
-		return reassignPartition(zkConn, partitionID, replicas, name, chroot)
+		return reassignPartition(zkConn, partitionID, replicas, topic.Name, chroot)
 	}
 
-	log.Infof("topic %s has only one replica, deleting it", name)
+	log.Infof("topic %s has only one replica, deleting it", topic.Name)
 
 	acceptableTimeout := 3 * time.Second
 
-	err = check.broker.DeleteTopic(name, acceptableTimeout)
+	err = check.broker.DeleteTopic(topic.Name, acceptableTimeout)
 	if err != nil {
 		return err
 	}
-	return nil
+	return check.waitForTopicDeletion(chroot + "/admin/delete_topics/" + topic.Name)
+}
+
+func (check *HealthCheck) waitForTopicDeletion(topicDelPath string) error {
+	for {
+		log.Infof("checking zookeeper for deletion of node \"%s\"", topicDelPath)
+		exists, _, err := check.zookeeper.Exists(topicDelPath)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return nil
+		}
+		time.Sleep(check.config.retryInterval)
+	}
 }
