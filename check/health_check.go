@@ -27,6 +27,7 @@ type HealthCheckConfig struct {
 	CheckInterval               time.Duration
 	CheckTimeout                time.Duration
 	DataWaitInterval            time.Duration
+	AcceptableBrokerTimeout     time.Duration
 	NoTopicCreation             bool
 	retryInterval               time.Duration
 	topicName                   string

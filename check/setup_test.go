@@ -254,7 +254,6 @@ func Test_deleteHealthCheckTopic_WhenDeleteSucceeds_ReturnsNoError(t *testing.T)
 
 	zookeeper.mockTopicGet("health-check")
 	connection.EXPECT().DeleteTopic("health-check", gomock.Any())
-	zookeeper.EXPECT().Exists("/admin/delete_topics/health-check").Return(false, nil, nil)
 
 	err := check.deleteTopic(zookeeper, "", "health-check", 0)
 
@@ -272,6 +271,11 @@ func Test_deleteTopic_WhenCreateDeleteNodeFails_ReturnsError(t *testing.T) {
 
 	zookeeper.mockTopicGet("health-check")
 
+	connection.EXPECT().DeleteTopic("health-check", gomock.Any()).Return(errors.New("New error"))
+
+	// here we are also testing that retriers do 3 tries before return an error
+	connection.EXPECT().DeleteTopic("health-check", gomock.Any()).Return(errors.New("New error"))
+	connection.EXPECT().DeleteTopic("health-check", gomock.Any()).Return(errors.New("New error"))
 	connection.EXPECT().DeleteTopic("health-check", gomock.Any()).Return(errors.New("New error"))
 
 	err := check.deleteTopic(zookeeper, "", "health-check", 0)

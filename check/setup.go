@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/samuel/go-zookeeper/zk"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/eapache/go-resiliency.v1/retrier"
 )
 
 const MainLockPath = "main_lock"
@@ -194,8 +195,6 @@ func (check *HealthCheck) createTopic(name string, forHealthCheck bool) (err err
 	if !exists {
 		log.Infof(`creating topic "%s" configuration node`, name)
 
-		acceptableTimeout := 3 * time.Second
-
 		healthCheckTopic := proto.TopicInfo{
 			Topic:             name,
 			NumPartitions:     -1,
@@ -222,7 +221,7 @@ func (check *HealthCheck) createTopic(name string, forHealthCheck bool) (err err
 				},
 			},
 		}
-		err := check.broker.CreateTopic(healthCheckTopic, acceptableTimeout)
+		err := check.broker.CreateTopic(healthCheckTopic, check.config.AcceptableBrokerTimeout)
 		if err != nil {
 			return err
 		}
@@ -372,25 +371,9 @@ func (check *HealthCheck) deleteTopic(zkConn ZkConnection, chroot, name string, 
 
 	log.Infof("topic %s has only one replica, deleting it", topic.Name)
 
-	acceptableTimeout := 3 * time.Second
+	r := retrier.New(retrier.ConstantBackoff(3, 100*time.Millisecond), nil)
 
-	err = check.broker.DeleteTopic(topic.Name, acceptableTimeout)
-	if err != nil {
-		return err
-	}
-	return check.waitForTopicDeletion(chroot + "/admin/delete_topics/" + topic.Name)
-}
-
-func (check *HealthCheck) waitForTopicDeletion(topicDelPath string) error {
-	for {
-		log.Infof("checking zookeeper for deletion of node \"%s\"", topicDelPath)
-		exists, _, err := check.zookeeper.Exists(topicDelPath)
-		if err != nil {
-			return err
-		}
-		if !exists {
-			return nil
-		}
-		time.Sleep(check.config.retryInterval)
-	}
+	return r.Run(func() error {
+		return check.broker.DeleteTopic(topic.Name, check.config.AcceptableBrokerTimeout)
+	})
 }

@@ -13,16 +13,17 @@ import (
 
 func newTestCheck() *HealthCheck {
 	config := HealthCheckConfig{
-		MessageLength:        100,
-		CheckInterval:        1 * time.Millisecond,
-		retryInterval:        1 * time.Millisecond,
-		CheckTimeout:         5 * time.Millisecond,
-		DataWaitInterval:     1 * time.Millisecond,
-		NoTopicCreation:      true,
-		topicName:            "health-check",
-		replicationTopicName: "replication-check",
-		brokerID:             1,
-		statusServerPort:     8000,
+		MessageLength:           100,
+		CheckInterval:           1 * time.Millisecond,
+		retryInterval:           1 * time.Millisecond,
+		CheckTimeout:            5 * time.Millisecond,
+		DataWaitInterval:        1 * time.Millisecond,
+		AcceptableBrokerTimeout: 3 * time.Second,
+		NoTopicCreation:         true,
+		topicName:               "health-check",
+		replicationTopicName:    "replication-check",
+		brokerID:                1,
+		statusServerPort:        8000,
 	}
 
 	return &HealthCheck{
