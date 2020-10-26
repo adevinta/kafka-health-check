@@ -254,6 +254,7 @@ func Test_deleteHealthCheckTopic_WhenDeleteSucceeds_ReturnsNoError(t *testing.T)
 
 	zookeeper.mockTopicGet("health-check")
 	connection.EXPECT().DeleteTopic("health-check", gomock.Any())
+	zookeeper.EXPECT().Exists("/admin/delete_topics/health-check").Return(false, nil, nil)
 
 	err := check.deleteTopic(zookeeper, "", "health-check", 0)
 
