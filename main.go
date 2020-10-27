@@ -48,6 +48,6 @@ var checkConfiguration = check.HealthCheckConfig{
 	MessageLength:    20,
 	ActionRetrierConfig: &check.ActionRetrierConfig{
 		NumOfRetries: 3,
-		Amount:       100 * time.Millisecond,
+		Amount:       1 * time.Second,
 	},
 }
