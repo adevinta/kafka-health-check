@@ -16,6 +16,7 @@ type HealthCheck struct {
 	consumer               kafka.Consumer
 	producer               kafka.Producer
 	config                 HealthCheckConfig
+	actionRetrier          ActionRetrier
 	partitionID            int32
 	replicationPartitionID int32
 	randSrc                rand.Source
@@ -47,11 +48,17 @@ type Update struct {
 
 // New creates a new health check with the given config.
 func New(config HealthCheckConfig) *HealthCheck {
+	actionRetrierConfig := &ActionRetrierConfig{
+		NumOfRetries: 3,
+		Amount:       100 * time.Millisecond,
+	}
+
 	return &HealthCheck{
-		broker:    &kafkaBrokerConnection{},
-		zookeeper: &zkConnection{},
-		randSrc:   rand.NewSource(time.Now().UnixNano()),
-		config:    config,
+		broker:        &kafkaBrokerConnection{},
+		zookeeper:     &zkConnection{},
+		randSrc:       rand.NewSource(time.Now().UnixNano()),
+		config:        config,
+		actionRetrier: NewActionRetrier(actionRetrierConfig),
 	}
 }
 

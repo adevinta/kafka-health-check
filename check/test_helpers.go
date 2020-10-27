@@ -25,12 +25,17 @@ func newTestCheck() *HealthCheck {
 		brokerID:                1,
 		statusServerPort:        8000,
 	}
+	actionRetrierConfig := &ActionRetrierConfig{
+		NumOfRetries: 3,
+		Amount:       1 * time.Millisecond,
+	}
 
 	return &HealthCheck{
 		config:                 config,
 		partitionID:            0,
 		replicationPartitionID: 0,
 		randSrc:                rand.NewSource(time.Now().UnixNano()),
+		actionRetrier:          NewActionRetrier(actionRetrierConfig),
 	}
 }
 

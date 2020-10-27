@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/samuel/go-zookeeper/zk"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/eapache/go-resiliency.v1/retrier"
 )
 
 const MainLockPath = "main_lock"
@@ -371,9 +370,7 @@ func (check *HealthCheck) deleteTopic(zkConn ZkConnection, chroot, name string, 
 
 	log.Infof("topic %s has only one replica, deleting it", topic.Name)
 
-	r := retrier.New(retrier.ConstantBackoff(3, 100*time.Millisecond), nil)
-
-	return r.Run(func() error {
+	return check.actionRetrier.Run(func() error {
 		return check.broker.DeleteTopic(topic.Name, check.config.AcceptableBrokerTimeout)
 	})
 }
