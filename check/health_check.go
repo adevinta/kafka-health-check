@@ -29,6 +29,7 @@ type HealthCheckConfig struct {
 	CheckTimeout                time.Duration
 	DataWaitInterval            time.Duration
 	AcceptableBrokerTimeout     time.Duration
+	ActionRetrierConfig         *ActionRetrierConfig
 	NoTopicCreation             bool
 	retryInterval               time.Duration
 	topicName                   string
@@ -48,17 +49,12 @@ type Update struct {
 
 // New creates a new health check with the given config.
 func New(config HealthCheckConfig) *HealthCheck {
-	actionRetrierConfig := &ActionRetrierConfig{
-		NumOfRetries: 3,
-		Amount:       100 * time.Millisecond,
-	}
-
 	return &HealthCheck{
 		broker:        &kafkaBrokerConnection{},
 		zookeeper:     &zkConnection{},
 		randSrc:       rand.NewSource(time.Now().UnixNano()),
 		config:        config,
-		actionRetrier: NewActionRetrier(actionRetrierConfig),
+		actionRetrier: NewActionRetrier(config.ActionRetrierConfig),
 	}
 }
 

@@ -46,4 +46,8 @@ var checkConfiguration = check.HealthCheckConfig{
 	CheckTimeout:     200 * time.Millisecond,
 	DataWaitInterval: 20 * time.Millisecond,
 	MessageLength:    20,
+	ActionRetrierConfig: &check.ActionRetrierConfig{
+		NumOfRetries: 3,
+		Amount:       100 * time.Millisecond,
+	},
 }

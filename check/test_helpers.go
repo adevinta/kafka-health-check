@@ -12,9 +12,15 @@ import (
 )
 
 func newTestCheck() *HealthCheck {
+	actionRetrierConfig := &ActionRetrierConfig{
+		NumOfRetries: 3,
+		Amount:       1 * time.Millisecond,
+	}
+
 	config := HealthCheckConfig{
 		MessageLength:           100,
 		CheckInterval:           1 * time.Millisecond,
+		ActionRetrierConfig:     actionRetrierConfig,
 		retryInterval:           1 * time.Millisecond,
 		CheckTimeout:            5 * time.Millisecond,
 		DataWaitInterval:        1 * time.Millisecond,
@@ -25,17 +31,13 @@ func newTestCheck() *HealthCheck {
 		brokerID:                1,
 		statusServerPort:        8000,
 	}
-	actionRetrierConfig := &ActionRetrierConfig{
-		NumOfRetries: 3,
-		Amount:       1 * time.Millisecond,
-	}
 
 	return &HealthCheck{
 		config:                 config,
 		partitionID:            0,
 		replicationPartitionID: 0,
 		randSrc:                rand.NewSource(time.Now().UnixNano()),
-		actionRetrier:          NewActionRetrier(actionRetrierConfig),
+		actionRetrier:          NewActionRetrier(config.ActionRetrierConfig),
 	}
 }
 
