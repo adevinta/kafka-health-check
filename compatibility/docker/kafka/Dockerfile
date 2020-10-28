@@ -40,6 +40,9 @@ VOLUME /var/lib/kafka
 
 ENV advertised_host=""
 
+# ruok is not whitelisted by default in new kafka version
+ENV KAFKA_OPTS="-Dzookeeper.4lw.commands.whitelist=*"
+
 # Define start wrapper as entrypoint.
 ENTRYPOINT [ "kafka/bin/start" ]
 

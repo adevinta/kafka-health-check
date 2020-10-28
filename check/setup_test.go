@@ -2,6 +2,7 @@ package check
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -126,12 +127,15 @@ func Test_findPartitionID_WhenTopicDoesNotExistAndMayCreateIt_CreatesTopic(t *te
 	defer ctrl.Finish()
 
 	check, zookeeper := newZkTestCheck(ctrl)
-	mockBroker(check, ctrl)
+	connection, _, _, _ := mockBroker(check, ctrl)
 	metadata := metadataWithoutTopic()
 
 	zookeeper.EXPECT().Connect([]string{"localhost:2181"}, gomock.Any()).Return(nil, nil)
-	zookeeper.mockSuccessfulPathCreation("/config/topics/health-check")
-	zookeeper.mockSuccessfulPathCreation("/brokers/topics/health-check")
+
+	zookeeper.EXPECT().Lock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
+	zookeeper.EXPECT().Unlock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
+
+	connection.EXPECT().CreateTopic(gomock.Any(), gomock.Any())
 	zookeeper.EXPECT().Close()
 
 	createIfMissing := true
@@ -164,11 +168,16 @@ func Test_createHealthCheckTopic_WhenTopicCreationsSuccessful_ReturnsNoError(t *
 	check := newTestCheck()
 	check.config.zookeeperConnect = "localhost:2181,localhost:2182"
 	zookeeper := NewMockZkConnection(ctrl)
+	connection, _, _, _ := mockBroker(check, ctrl)
+
 	check.zookeeper = zookeeper
 
 	zookeeper.EXPECT().Connect([]string{"localhost:2181", "localhost:2182"}, gomock.Any()).Return(nil, nil)
-	zookeeper.mockSuccessfulPathCreation("/config/topics/health-check")
-	zookeeper.mockSuccessfulPathCreation("/brokers/topics/health-check")
+
+	zookeeper.EXPECT().Lock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
+	zookeeper.EXPECT().Unlock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
+
+	connection.EXPECT().CreateTopic(gomock.Any(), gomock.Any())
 	zookeeper.EXPECT().Close()
 
 	err := check.createTopic("health-check", true)
@@ -214,30 +223,19 @@ func Test_createTopic_WhenZookeeperConnectionFails_ReturnsError(t *testing.T) {
 	}
 }
 
-func Test_createTopic_WhenCreatingTopicConfigFails_ReturnsError(t *testing.T) {
+func Test_createTopic_WhenCreatingTopicFails_ReturnsError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	check, zookeeper := newZkTestCheck(ctrl)
+	connection, _, _, _ := mockBroker(check, ctrl)
+
 	zookeeper.EXPECT().Connect([]string{"localhost:2181"}, gomock.Any()).Return(nil, nil)
-	zookeeper.mockFailingPathCreation("/config/topics/health-check")
-	zookeeper.EXPECT().Close()
 
-	err := check.createTopic("health-check", true)
+	zookeeper.EXPECT().Lock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
+	zookeeper.EXPECT().Unlock(fmt.Sprintf("/healthcheck/%s", MainLockPath))
+	connection.EXPECT().CreateTopic(gomock.Any(), gomock.Any()).Return(errors.New("Topic Create error"))
 
-	if err == nil {
-		t.Error("expected error to be returned, but was nil")
-	}
-}
-
-func Test_createTopic_WhenCreatingTopicPartitionsFails_ReturnsError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	check, zookeeper := newZkTestCheck(ctrl)
-	zookeeper.EXPECT().Connect([]string{"localhost:2181"}, gomock.Any()).Return(nil, nil)
-	zookeeper.mockSuccessfulPathCreation("/config/topics/health-check")
-	zookeeper.mockFailingPathCreation("/brokers/topics/health-check")
 	zookeeper.EXPECT().Close()
 
 	err := check.createTopic("health-check", true)
@@ -252,9 +250,10 @@ func Test_deleteHealthCheckTopic_WhenDeleteSucceeds_ReturnsNoError(t *testing.T)
 	defer ctrl.Finish()
 
 	check, zookeeper := newZkTestCheck(ctrl)
+	connection, _, _, _ := mockBroker(check, ctrl)
+
 	zookeeper.mockTopicGet("health-check")
-	zookeeper.mockSuccessfulPathCreation("/admin/delete_topics/health-check")
-	zookeeper.EXPECT().Exists("/admin/delete_topics/health-check").Return(true, nil, nil).Return(false, nil, nil)
+	connection.EXPECT().DeleteTopic("health-check", gomock.Any())
 
 	err := check.deleteTopic(zookeeper, "", "health-check", 0)
 
@@ -268,24 +267,16 @@ func Test_deleteTopic_WhenCreateDeleteNodeFails_ReturnsError(t *testing.T) {
 	defer ctrl.Finish()
 
 	check, zookeeper := newZkTestCheck(ctrl)
+	connection, _, _, _ := mockBroker(check, ctrl)
+
 	zookeeper.mockTopicGet("health-check")
-	zookeeper.mockFailingPathCreation("/admin/delete_topics/health-check")
 
-	err := check.deleteTopic(zookeeper, "", "health-check", 0)
+	connection.EXPECT().DeleteTopic("health-check", gomock.Any()).Return(errors.New("New error"))
 
-	if err == nil {
-		t.Error("expected error to be returned, but was nil")
+	// here we are also testing that retriers do n tries before return an error
+	for i := 0; i < int(check.config.ActionRetrierConfig.NumOfRetries); i++ {
+		connection.EXPECT().DeleteTopic("health-check", gomock.Any()).Return(errors.New("New error"))
 	}
-}
-
-func Test_deleteTopic_WhenExistsFails_ReturnsError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	check, zookeeper := newZkTestCheck(ctrl)
-	zookeeper.mockTopicGet("health-check")
-	zookeeper.mockSuccessfulPathCreation("/admin/delete_topics/health-check")
-	zookeeper.EXPECT().Exists("/admin/delete_topics/health-check").Return(false, nil, errors.New("test error"))
 
 	err := check.deleteTopic(zookeeper, "", "health-check", 0)
 

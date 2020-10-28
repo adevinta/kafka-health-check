@@ -17,9 +17,9 @@ import (
 	"strings"
 	"time"
 
+	"encoding/json"
 	"github.com/hashicorp/go-version"
 	"github.com/smallfish/simpleyaml"
-	"encoding/json"
 )
 
 type versionSpec struct {
@@ -135,7 +135,7 @@ func startAll(tag, healthCheckCommand string) (zkID, kafkaID string, hcCmd *exec
 
 	log.Print("Starting Kafka...")
 	kCmd := exec.Command("docker", "run", "-d",
-		"--env", "advertised_host=" + advertisedHost,
+		"--env", "advertised_host="+advertisedHost,
 		"--name", kafkaID, "-p", "9092:9092",
 		"--link", zkID+":zookeeper", tag)
 	kCmd.Run()

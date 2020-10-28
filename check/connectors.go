@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/optiopay/kafka"
-	"github.com/optiopay/kafka/proto"
+	"github.com/Adevinta/kafka/v2"
+	"github.com/Adevinta/kafka/v2/proto"
 	"github.com/samuel/go-zookeeper/zk"
 )
 
@@ -18,6 +18,10 @@ type BrokerConnection interface {
 	Producer(conf kafka.ProducerConf) kafka.Producer
 
 	Metadata() (*proto.MetadataResp, error)
+
+	CreateTopic(proto.TopicInfo, time.Duration) error
+
+	DeleteTopic(string, time.Duration) error
 
 	Close()
 }
@@ -38,6 +42,36 @@ func (connection *kafkaBrokerConnection) Dial(nodeAddresses []string, conf kafka
 
 func (connection *kafkaBrokerConnection) Consumer(conf kafka.ConsumerConf) (kafka.Consumer, error) {
 	return connection.broker.Consumer(conf)
+}
+
+func (connection *kafkaBrokerConnection) CreateTopic(topic proto.TopicInfo, timeout time.Duration) error {
+	resp, err := connection.broker.CreateTopic([]proto.TopicInfo{topic}, timeout, false)
+	if err != nil {
+		return err
+	}
+
+	if len(resp.TopicErrors) > 0 {
+		if resp.TopicErrors[0].ErrorCode != 0 {
+			return resp.TopicErrors[0].Err
+		}
+	}
+
+	return nil
+}
+
+func (connection *kafkaBrokerConnection) DeleteTopic(topic string, timeout time.Duration) error {
+	resp, err := connection.broker.DeleteTopic([]string{topic}, timeout)
+	if err != nil {
+		return err
+	}
+
+	if len(resp.TopicErrors) > 0 {
+		if resp.TopicErrors[0].ErrorCode != 0 {
+			return fmt.Errorf("Deletion failed for Topic: %s with ErrorCode: %d", resp.TopicErrors[0].Topic, resp.TopicErrors[0].ErrorCode)
+		}
+	}
+
+	return nil
 }
 
 func (connection *kafkaBrokerConnection) Producer(conf kafka.ProducerConf) kafka.Producer {

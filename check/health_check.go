@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/optiopay/kafka"
+	"github.com/Adevinta/kafka/v2"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,6 +16,7 @@ type HealthCheck struct {
 	consumer               kafka.Consumer
 	producer               kafka.Producer
 	config                 HealthCheckConfig
+	actionRetrier          ActionRetrier
 	partitionID            int32
 	replicationPartitionID int32
 	randSrc                rand.Source
@@ -27,6 +28,8 @@ type HealthCheckConfig struct {
 	CheckInterval               time.Duration
 	CheckTimeout                time.Duration
 	DataWaitInterval            time.Duration
+	AcceptableBrokerTimeout     time.Duration
+	ActionRetrierConfig         ActionRetrierConfig
 	NoTopicCreation             bool
 	retryInterval               time.Duration
 	topicName                   string
@@ -47,10 +50,11 @@ type Update struct {
 // New creates a new health check with the given config.
 func New(config HealthCheckConfig) *HealthCheck {
 	return &HealthCheck{
-		broker:    &kafkaBrokerConnection{},
-		zookeeper: &zkConnection{},
-		randSrc:   rand.NewSource(time.Now().UnixNano()),
-		config:    config,
+		broker:        &kafkaBrokerConnection{},
+		zookeeper:     &zkConnection{},
+		randSrc:       rand.NewSource(time.Now().UnixNano()),
+		config:        config,
+		actionRetrier: NewActionRetrier(config.ActionRetrierConfig),
 	}
 }
 

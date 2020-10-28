@@ -42,6 +42,7 @@ func Test_checkHealth_WhenBrokerInMetadataAndProducedMessageIsConsumed_ReportsHe
 	connection.EXPECT().Producer(gomock.Any()).Return(check.producer)
 	connection.EXPECT().Metadata().Return(healthyMetadata(check.config.topicName, check.config.replicationTopicName), nil).AnyTimes()
 	connection.EXPECT().Close()
+
 	zk.mockHealthyMetadata(check.config.topicName, check.config.replicationTopicName)
 
 	brokerUpdates := make(chan Update)
@@ -53,7 +54,6 @@ func Test_checkHealth_WhenBrokerInMetadataAndProducedMessageIsConsumed_ReportsHe
 	awaitCheck.Add(1)
 	go func() {
 		check.CheckHealth(brokerUpdates, clusterUpdates, stop, &awaitCheck)
-		awaitCheck.Done()
 	}()
 
 	brokerStatus := <-brokerUpdates
