@@ -273,10 +273,10 @@ func Test_deleteTopic_WhenCreateDeleteNodeFails_ReturnsError(t *testing.T) {
 
 	connection.EXPECT().DeleteTopic("health-check", gomock.Any()).Return(errors.New("New error"))
 
-	// here we are also testing that retriers do 3 tries before return an error
-	connection.EXPECT().DeleteTopic("health-check", gomock.Any()).Return(errors.New("New error"))
-	connection.EXPECT().DeleteTopic("health-check", gomock.Any()).Return(errors.New("New error"))
-	connection.EXPECT().DeleteTopic("health-check", gomock.Any()).Return(errors.New("New error"))
+	// here we are also testing that retriers do n tries before return an error
+	for i := 0; i < int(check.config.ActionRetrierConfig.NumOfRetries); i++ {
+		connection.EXPECT().DeleteTopic("health-check", gomock.Any()).Return(errors.New("New error"))
+	}
 
 	err := check.deleteTopic(zookeeper, "", "health-check", 0)
 

@@ -12,15 +12,13 @@ import (
 )
 
 func newTestCheck() *HealthCheck {
-	actionRetrierConfig := &ActionRetrierConfig{
-		NumOfRetries: 3,
-		Amount:       1 * time.Millisecond,
-	}
-
 	config := HealthCheckConfig{
-		MessageLength:           100,
-		CheckInterval:           1 * time.Millisecond,
-		ActionRetrierConfig:     actionRetrierConfig,
+		MessageLength: 100,
+		CheckInterval: 1 * time.Millisecond,
+		ActionRetrierConfig: ActionRetrierConfig{
+			NumOfRetries: 3,
+			Amount:       1 * time.Millisecond,
+		},
 		retryInterval:           1 * time.Millisecond,
 		CheckTimeout:            5 * time.Millisecond,
 		DataWaitInterval:        1 * time.Millisecond,

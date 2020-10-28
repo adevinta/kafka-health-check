@@ -14,7 +14,7 @@ type ActionRetrierConfig struct {
 	Amount       time.Duration
 }
 
-func NewActionRetrier(cfg *ActionRetrierConfig) ActionRetrier {
+func NewActionRetrier(cfg ActionRetrierConfig) ActionRetrier {
 	return ActionRetrier{
 		retrier.New(
 			retrier.ExponentialBackoff(int(cfg.NumOfRetries), cfg.Amount),

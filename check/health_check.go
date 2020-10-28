@@ -29,7 +29,7 @@ type HealthCheckConfig struct {
 	CheckTimeout                time.Duration
 	DataWaitInterval            time.Duration
 	AcceptableBrokerTimeout     time.Duration
-	ActionRetrierConfig         *ActionRetrierConfig
+	ActionRetrierConfig         ActionRetrierConfig
 	NoTopicCreation             bool
 	retryInterval               time.Duration
 	topicName                   string
