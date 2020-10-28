@@ -194,8 +194,6 @@ func (check *HealthCheck) createTopic(name string, forHealthCheck bool) (err err
 	if !exists {
 		log.Infof(`creating topic "%s" configuration node`, name)
 
-		acceptableTimeout := 3 * time.Second
-
 		healthCheckTopic := proto.TopicInfo{
 			Topic:             name,
 			NumPartitions:     -1,
@@ -222,7 +220,7 @@ func (check *HealthCheck) createTopic(name string, forHealthCheck bool) (err err
 				},
 			},
 		}
-		err := check.broker.CreateTopic(healthCheckTopic, acceptableTimeout)
+		err := check.broker.CreateTopic(healthCheckTopic, check.config.AcceptableBrokerTimeout)
 		if err != nil {
 			return err
 		}
@@ -353,30 +351,26 @@ func (check *HealthCheck) closeConnection(deleteTopicIfPresent bool) error {
 
 func (check *HealthCheck) deleteTopic(zkConn ZkConnection, chroot, name string, partitionID int32) error {
 	topic := ZkTopic{Name: name}
-	err := zkPartitions(&topic, zkConn, name, chroot)
+	err := zkPartitions(&topic, zkConn, topic.Name, chroot)
 	if err != nil {
 		return err
 	}
 
 	replicas, ok := topic.Partitions[partitionID]
 	if !ok {
-		return fmt.Errorf(`Cannot find partition with ID %d in topic "%s"`, partitionID, name)
+		return fmt.Errorf(`Cannot find partition with ID %d in topic "%s"`, partitionID, topic.Name)
 	}
 
 	brokerID := int32(check.config.brokerID)
 	if len(replicas) > 1 {
 		log.Info("Shrinking replication check topic to exclude broker ", brokerID)
 		replicas = delAll(replicas, brokerID)
-		return reassignPartition(zkConn, partitionID, replicas, name, chroot)
+		return reassignPartition(zkConn, partitionID, replicas, topic.Name, chroot)
 	}
 
-	log.Infof("topic %s has only one replica, deleting it", name)
+	log.Infof("topic %s has only one replica, deleting it", topic.Name)
 
-	acceptableTimeout := 3 * time.Second
-
-	err = check.broker.DeleteTopic(name, acceptableTimeout)
-	if err != nil {
-		return err
-	}
-	return nil
+	return check.actionRetrier.Run(func() error {
+		return check.broker.DeleteTopic(topic.Name, check.config.AcceptableBrokerTimeout)
+	})
 }
